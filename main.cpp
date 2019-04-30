@@ -22,8 +22,8 @@ DigitalOut hallpwr(p22);
 AnalogIn sonar(p19);
 
 //Servos
-ContinuousServo left(p23);
-ContinuousServo right(p26);
+ContinuousServo left(p26);
+ContinuousServo right(p23);
 //encoders
 Tach tLeft(p17,64);
 Tach tRight(p13,64);
@@ -38,7 +38,6 @@ int main(){
     float lerror;
     float rerror;
     int rgb_data[4];
-    float PWMbrightness = 1.0;
     int Unfilt;
     int Red;
     int Green;
@@ -49,6 +48,8 @@ int main(){
     float rightspeedin;
     float sonarraw;
     float distance;
+    float cerror;
+    float cset=800;
     while(1) {
         
         //MBED Indicating Lights
@@ -59,15 +60,15 @@ int main(){
         Green  = rgb_data[2];
         Blue  = rgb_data[3];
         hallpwr=1;
-        //pc.printf("%f,%f,%f,%f\r\n",rgb_data[0],rgb_data[1],rgb_data[2],rgb_data[3]);
+        pc.printf("%d\r\n", Unfilt);
         if ((Unfilt>4500) && (Red>Green) && (Red>Blue) && (Green>Blue)){
-            pc.printf("White\r\n");
+            //pc.printf("White\r\n");
             }
         else if ((Green>Blue) && (Blue>Red)){
-           pc.printf("Black\r\n");
+           //pc.printf("Black\r\n");
             }
         else if ((Green>Red) && (Red>Blue) && (Unfilt<3000)) {
-            pc.printf("Green\r\n");
+            //pc.printf("Green\r\n");
             //LED2
             led1=0;
             led2=1;
@@ -75,7 +76,7 @@ int main(){
             led4=0;
             }
         else if (Red>(Blue+Green)){
-            pc.printf("Red\r\n");
+            //pc.printf("Red\r\n");
             //LED1
             led1=1;
             led2=0;
@@ -83,7 +84,7 @@ int main(){
             led4=0;
             }
         else if (Blue>Red && Blue>Green){
-            pc.printf("Blue\r\n");
+            //pc.printf("Blue\r\n");
             //LED3
             led1=0;
             led2=0;
@@ -106,25 +107,35 @@ int main(){
         setleft = .1;
         setright = -.1;
         
-        //pc.printf("%f\r\n", rgb_data[0]);
+        cerror=cset-Unfilt;
+        leftspeedin=setleft-(.0005*cerror);
+        rightspeedin=setright-(.0005*cerror);
         
-        lerror=setleft-leftspeed; //compute error and define speed
-        leftspeedin=setleft+(.05*lerror); 
-        rerror=setright-rightspeed;
-        rightspeedin=setright+(.05*rerror);
+        pc.printf("%d,%f,%f,%f\r\n", Unfilt, cerror, leftspeedin, rightspeedin);
+        //lerror=setleft-leftspeed; //compute error and define speed
+        //leftspeedin=setleft+(.05*lerror); 
+        //rerror=setright-rightspeed;
+        //rightspeedin=setright+(.05*rerror);
         
-        left.speed(leftspeedin); //input speeds
-        right.speed(rightspeedin);
+        //left.speed(leftspeedin); //input speeds
+        //right.speed(rightspeedin);
         
         
-        
-        pc.printf("%f,%f\r\n",lerror, rerror);
-        pc.printf("%f,%f\r\n",leftspeedin, rightspeedin);
+        //pc.printf("speed %f,%f\r\n",leftspeed, rightspeed); 
+        //pc.printf("error %f,%f\r\n",lerror, rerror);
+        //pc.printf("input %f,%f\r\n",leftspeedin, rightspeedin);
         
         //Sonar Sensor'
+        
         sonarraw = sonar.read();
-        distance = ((sonarraw-.003)/.0034);
-        pc.printf("%f,%f\r\n", sonarraw, distance);
+        distance = (sonarraw*438.4);
+        //pc.printf("%f,%f\r\n", sonarraw, distance);
+        if (distance> 13.5){
+            left.speed(leftspeedin);
+            right.speed(rightspeedin);}
+        else if (distance <13.5){
+                left.speed(0);
+                right.speed(0);}
         wait(.1);
         }
     } 
